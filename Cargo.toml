@@ -1,0 +1,25 @@
+[package]
+name = "pytemporalio"
+version = "0.1.0"
+authors = ["Linas Valiukas <pypt@pypt.lt>"]
+keywords = ["temporal", "temporal.io", "workflow", "cadence"]
+readme = "README.md"
+description = "Unofficial SDK client for temporal.io"
+categories = ["development-tools"]
+edition = "2018"
+
+[lib]
+name = "pytemporalio"
+crate-type = ["cdylib"]
+
+[dependencies.temporal-sdk-core]
+git = "https://github.com/temporalio/sdk-core.git"
+rev = "1474ab7f78e04fd763c1eb0d8df5ac6bef6d68bc"
+
+[dependencies.pyo3]
+version = "0.14.1"
+features = ["extension-module"]
+
+[dependencies.pyo3-asyncio]
+version = "0.13.4"
+features = ["attributes", "async-std-runtime"]

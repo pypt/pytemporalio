@@ -10,3 +10,4 @@ https://github.com/temporalio/sdk-node/tree/main/packages/core-bridge/src
 FIXME do I need Clone traits everywhere?
 FIXME make all errors specific
 FIXME extend error descriptions
+FIXME rename "internal" to something that makes more sense

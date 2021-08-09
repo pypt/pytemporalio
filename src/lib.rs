@@ -6,38 +6,29 @@ use pyo3_asyncio;
 
 mod errors;
 mod pollers;
+mod protos;
 mod worker;
 
-// use errors::*;
+use errors::{WorkerRegistrationError, PollWfError};
 use pollers::WrappedServerGatewayOptions;
+use protos::{
+    WrappedPayload,
+    WrappedWfActivation,
+    WrappedWfActivationJob,
+    WrappedStartWorkflow,
+    WrappedFireTimer,
+};
 use worker::WrappedWorkerConfig;
 
 
-// use prost::Message;
-
-// use std::{fmt::Display, future::Future, sync::Arc};
+use std::sync::Arc;
 
 use temporal_sdk_core::{
     init,
-    // protos::coresdk::workflow_completion::WfActivationCompletion,
-    // protos::coresdk::ActivityHeartbeat,
-    // protos::coresdk::ActivityTaskCompletion,
-    // tracing_init,
-    // ClientTlsConfig,
-    // CompleteActivityError,
-    // CompleteWfError,
     Core,
-    // CoreInitError,
     CoreInitOptions,
-    // PollActivityError,
-    // PollWfError,
-    // ServerGatewayOptions,
-    // TlsConfig,
-    // Url,
-    // WorkerConfig,
+    protos::coresdk::workflow_activation::wf_activation_job,
 };
-// use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
-// use std::collections::HashMap;
 
 
 #[pyclass(name = "CoreInitOptions")]
@@ -62,26 +53,85 @@ impl WrappedCoreInitOptions {
 
 
 #[pyclass(name = "Core")]
-#[derive(Clone)]
 struct WrappedCore {
-    pub(crate) internal: Box<dyn Core>,
+    pub(crate) internal: Arc<Box<dyn Core>>,
 }
 
 #[pymethods]
 impl WrappedCore {
-    fn register_worker<'p>(&mut self, py: Python<'p>, config: WrappedWorkerConfig) -> PyResult<&'p PyAny> {
-        let mut this = self.clone();
-
+    fn register_worker<'p>(&self, py: Python<'p>, config: WrappedWorkerConfig) -> PyResult<&'p PyAny> {
+        let internal = self.internal.clone();
         pyo3_asyncio::tokio::local_future_into_py(py, async move {
-            match this.internal.register_worker(config.internal).await {
-
-                // FIXME custom error
-                Err(err) => Err(PyOSError::new_err(format!(
+            match internal.register_worker(config.internal).await {
+                Err(err) => Err(WorkerRegistrationError::new_err(format!(
                     "{}",
                     err.to_string()
                 ))),
                 Ok(()) => {
                     Python::with_gil(|py| Ok(py.None()))
+                }
+            }
+        })
+    }
+
+    fn poll_workflow_task<'p>(&self, py: Python<'p>, task_queue: String) -> PyResult<&'p PyAny> {
+        let internal = self.internal.clone();
+        pyo3_asyncio::tokio::local_future_into_py(py, async move {
+            match internal.poll_workflow_task(task_queue.as_str()).await {
+                Err(err) => Err(PollWfError::new_err(format!(
+                    "{}",
+                    err.to_string()
+                ))),
+                Ok(wf_activation) => {
+                    // FIXME return the activation
+                    Python::with_gil(|py| {
+
+                        // FIXME make sure duration since epoch works fine
+                        let nanos_since_epoch = match wf_activation.timestamp {
+                            Some(ts) => Some(ts.seconds as u128 * 1000 + ts.nanos as u128),
+                            None => None,
+                        };
+
+                        let wrapped_jobs: Vec<Option<WrappedWfActivationJob>> = wf_activation.jobs.iter().map(|&x| match x.variant {
+                            None => None,
+
+                            // FIXME wrap around 120 characters
+                            Some(job) => Some(match job {
+                                wf_activation_job::Variant::StartWorkflow(matched_job) => {
+                                    WrappedStartWorkflow {
+                                        workflow_type: matched_job.workflow_type,
+                                        workflow_id: matched_job.workflow_id,
+                                        arguments: matched_job.arguments.iter().map(|&x| WrappedPayload {
+                                            metadata: x.metadata,
+                                            data: x.data,
+                                        }).collect::<Vec<_>>(),
+                                        randomness_seed: matched_job.randomness_seed,
+
+                                        // FIXME we could probably do less copying here
+                                        headers: matched_job.headers.iter().map(|(k, v)| (
+                                            String::from(k),
+                                            WrappedPayload { metadata: v.metadata, data: v.data }
+                                        )).collect(),
+                                    }
+                                }
+                                wf_activation_job::Variant::FireTimer(matched_job) => {
+                                    WrappedFireTimer {
+                                        timer_id: matched_job.timer_id,
+                                    }
+                                }
+                            }),
+                        }).collect::<Vec<_>>();
+
+                        let wrapped_wf_activation = WrappedWfActivation {
+                            run_id: wf_activation.run_id,
+                            // FIXME is it optional by any chance?
+                            timestamp: nanos_since_epoch,
+                            is_replaying: wf_activation.is_replaying,
+                            jobs: wrapped_jobs,
+                        };
+
+                        Ok(wrapped_wf_activation.into_py(py))
+                    })
                 }
             }
         })
@@ -98,7 +148,7 @@ fn wrapped_init(py: Python, opts: WrappedCoreInitOptions) -> PyResult<&PyAny> {
             ))),
             Ok(initialized_core) => {
                 Python::with_gil(|py| {
-                    let wrapped_core = WrappedCore { internal: Box::new(initialized_core) };
+                    let wrapped_core = WrappedCore { internal: Arc::new(Box::new(initialized_core)) };
                     Ok(wrapped_core.into_py(py))
                 })
             }

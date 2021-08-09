@@ -14,12 +14,27 @@ crate-type = ["cdylib"]
 
 [dependencies.temporal-sdk-core]
 git = "https://github.com/temporalio/sdk-core.git"
-rev = "1474ab7f78e04fd763c1eb0d8df5ac6bef6d68bc"
+rev = "001504aad24256fb7b880251052daf3c7715ff14"
+
+[dependencies.chrono]
+version = "0.4.19"
+
+[dependencies.prost]
+version = "0.8.0"
+
+[dependencies.prost-types]
+version = "0.8.0"
+
+[dependencies.tokio]
+version = "1.9.0"
 
 [dependencies.pyo3]
-version = "0.14.1"
+version = "0.14.2"
 features = ["extension-module"]
 
+[dependencies.pyo3-chrono]
+version = "0.2.1"
+
 [dependencies.pyo3-asyncio]
-version = "0.13.4"
-features = ["attributes", "async-std-runtime"]
+version = "0.14.0"
+features = ["attributes", "tokio-runtime"]

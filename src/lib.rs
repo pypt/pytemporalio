@@ -84,7 +84,7 @@ impl WrappedCoreInitOptions {
 
 #[pyclass(name = "Core")]
 struct WrappedCore {
-    pub(crate) internal: Arc<Box<dyn Core>>,
+    pub(crate) internal: Arc<dyn Core>,
 }
 
 #[pymethods]
@@ -426,7 +426,7 @@ fn wrapped_init(py: Python, opts: WrappedCoreInitOptions) -> PyResult<&PyAny> {
             ))),
             Ok(initialized_core) => {
                 Python::with_gil(|py| {
-                    let wrapped_core = WrappedCore { internal: Arc::new(Box::new(initialized_core)) };
+                    let wrapped_core = WrappedCore { internal: Arc::new(initialized_core) };
                     Ok(wrapped_core.into_py(py))
                 })
             }

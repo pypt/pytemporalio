@@ -4,3 +4,5 @@ create_exception!(pytemporalio, WorkerRegistrationError, pyo3::exceptions::PyExc
 create_exception!(pytemporalio, WorkerAlreadyRegisteredForQueue, WorkerRegistrationError);
 
 create_exception!(pytemporalio, PollWfError, pyo3::exceptions::PyException);
+
+create_exception!(pytemporalio, PollActivityError, pyo3::exceptions::PyException);

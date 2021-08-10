@@ -11,3 +11,4 @@ FIXME do I need Clone traits everywhere?
 FIXME make all errors specific
 FIXME extend error descriptions
 FIXME rename "internal" to something that makes more sense
+FIXME get rid of telemetry

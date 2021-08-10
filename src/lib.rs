@@ -6,9 +6,14 @@ use pyo3_asyncio;
 mod errors;
 mod pollers;
 mod protos;
+mod utils;
 mod worker;
 
-use errors::{WorkerRegistrationError, PollWfError};
+use errors::{
+    WorkerRegistrationError,
+    PollWfError,
+    PollActivityError,
+};
 use pollers::WrappedServerGatewayOptions;
 
 // FIXME make them more hierarchical or something
@@ -28,6 +33,10 @@ use protos::{
     WrappedCancelation,
     WrappedFailure,
     WrappedUserCodeFailure,
+    WrappedActivityTask,
+    WrappedStart,
+    WrappedCancel,
+    WrappedWorkflowExecution,
 };
 use worker::WrappedWorkerConfig;
 
@@ -40,7 +49,14 @@ use temporal_sdk_core::{
     CoreInitOptions,
     protos::coresdk::workflow_activation::wf_activation_job,
     protos::coresdk::activity_result::activity_result,
+    protos::coresdk::activity_task::activity_task,
 };
+
+use utils::{
+    prost_types_timestamp_to_u128,
+    prost_duration_to_pyo3_chrono_duration,
+};
+use crate::protos::{WrappedRetryPolicy, WrappedVariant};
 
 
 #[pyclass(name = "CoreInitOptions")]
@@ -97,12 +113,6 @@ impl WrappedCore {
                 Ok(wf_activation) => {
                     // FIXME return the activation
                     Python::with_gil(|py| {
-
-                        // FIXME make sure duration since epoch works fine
-                        let nanos_since_epoch = match wf_activation.timestamp {
-                            Some(ts) => Some(ts.seconds as u128 * 1000 + ts.nanos as u128),
-                            None => None,
-                        };
 
                         let wrapped_jobs: Vec<Option<WrappedWfActivationJob>> = wf_activation.jobs.iter().map(|x| match x.variant.clone() {
                             None => None,
@@ -323,12 +333,98 @@ impl WrappedCore {
                         let wrapped_wf_activation = WrappedWfActivation {
                             run_id: wf_activation.run_id,
                             // FIXME is it optional by any chance?
-                            timestamp: nanos_since_epoch,
+                            timestamp: prost_types_timestamp_to_u128(wf_activation.timestamp),
                             is_replaying: wf_activation.is_replaying,
                             jobs: wrapped_jobs,
                         };
 
                         Ok(wrapped_wf_activation.into_py(py))
+                    })
+                }
+            }
+        })
+    }
+
+    fn poll_activity_task<'p>(&self, py: Python<'p>, task_queue: String) -> PyResult<&'p PyAny> {
+        let internal = self.internal.clone();
+        pyo3_asyncio::tokio::local_future_into_py(py, async move {
+            match internal.poll_activity_task(task_queue.as_str()).await {
+
+                // FIXME PollActivityError
+                Err(err) => Err(PollActivityError::new_err(format!(
+                    "{}",
+                    err.to_string()
+                ))),
+                Ok(activity_task) => {
+                    // FIXME WrappedActivityTask
+                    Python::with_gil(|py| {
+                        let wrapped_activity_task = WrappedActivityTask {
+                            task_token: activity_task.task_token,
+                            activity_id: activity_task.activity_id,
+                            variant: match activity_task.variant {
+                                None => None,
+                                Some(variant) => Some(
+                                    match variant {
+                                        activity_task::Variant::Start(task) => {
+                                            WrappedVariant {
+                                                start: Some(WrappedStart {
+                                                    workflow_namespace: task.workflow_namespace,
+                                                    workflow_type: task.workflow_type,
+                                                    workflow_execution: match task.workflow_execution {
+                                                        None => None,
+                                                        Some(workflow_execution) => Some(WrappedWorkflowExecution {
+                                                            workflow_id: workflow_execution.workflow_id,
+                                                            run_id: workflow_execution.run_id,
+                                                        }),
+                                                    },
+                                                    activity_type: task.activity_type,
+                                                    header_fields: task.header_fields.iter().map(|(k, v)| (
+                                                        String::from(k),
+                                                        WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
+                                                    )).collect(),
+                                                    input: task.input.iter().map(|x| WrappedPayload {
+                                                        metadata: x.metadata.clone(),
+                                                        data: x.data.clone(),
+                                                    }).collect::<Vec<_>>(),
+                                                    heartbeat_details: task.heartbeat_details.iter().map(|x| WrappedPayload {
+                                                        metadata: x.metadata.clone(),
+                                                        data: x.data.clone(),
+                                                    }).collect::<Vec<_>>(),
+                                                    scheduled_time: prost_types_timestamp_to_u128(task.scheduled_time),
+                                                    current_attempt_scheduled_time: prost_types_timestamp_to_u128(task.current_attempt_scheduled_time),
+                                                    started_time: prost_types_timestamp_to_u128(task.started_time),
+                                                    attempt: task.attempt,
+                                                    schedule_to_close_timeout: prost_duration_to_pyo3_chrono_duration(task.schedule_to_close_timeout)?,
+                                                    start_to_close_timeout: prost_duration_to_pyo3_chrono_duration(task.start_to_close_timeout)?,
+                                                    heartbeat_timeout: prost_duration_to_pyo3_chrono_duration(task.heartbeat_timeout)?,
+                                                    retry_policy: match task.retry_policy {
+                                                        None => None,
+                                                        Some(retry_policy) => Some( WrappedRetryPolicy{
+                                                            initial_interval: prost_duration_to_pyo3_chrono_duration(retry_policy.initial_interval)?,
+                                                            backoff_coefficient: retry_policy.backoff_coefficient,
+                                                            maximum_interval: prost_duration_to_pyo3_chrono_duration(retry_policy.maximum_interval)?,
+                                                            maximum_attempts: retry_policy.maximum_attempts,
+                                                            non_retryable_error_types: retry_policy.non_retryable_error_types,
+                                                        }),
+                                                    },
+                                                }),
+                                                cancel: None,
+                                            }
+                                        },
+                                        activity_task::Variant::Cancel(task) => {
+                                            WrappedVariant {
+                                                start: None,
+                                                cancel: Some(WrappedCancel {
+                                                    reason: task.reason,
+                                                })
+                                            }
+                                        },
+                                    }
+                                )
+                            },
+                        };
+
+                        Ok(wrapped_activity_task.into_py(py))
                     })
                 }
             }

@@ -1,30 +1,16 @@
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 
-// use std::{fmt::{Debug, Formatter}};
-
 use pyo3_chrono;
 
 use temporal_sdk_core::{
-    // init,
-    // tracing_init,
-    // protos::coresdk::workflow_completion::WfActivationCompletion,
-    // protos::coresdk::ActivityHeartbeat,
-    // protos::coresdk::ActivityTaskCompletion,
     ClientTlsConfig,
-    // CompleteActivityError,
-    // CompleteWfError,
-    // Core,
-    // CoreInitError,
-    // CoreInitOptions,
-    // PollActivityError,
-    // PollWfError,
     ServerGatewayOptions,
     TlsConfig,
     Url,
-    // WorkerConfig,
 };
-// use std::error::Error;
+
+use crate::utils::pyo3_chrono_duration_to_std_duration;
 
 #[pyclass(name = "ClientTlsConfig")]
 #[derive(Clone)]
@@ -96,22 +82,13 @@ impl WrappedServerGatewayOptions {
             ))),
         };
 
-        // FIXME where does ".0" point to?
-        let converted_long_poll_timeout = match long_poll_timeout.0.to_std() {
-            Ok(timeout) => { timeout }
-            Err(e) => return Err(PyValueError::new_err(format!(
-                "{}",
-                e.to_string()
-            ))),
-        };
-
         Ok(WrappedServerGatewayOptions {
             internal: ServerGatewayOptions {
                 target_url: parsed_target_url,
                 namespace,
                 identity,
                 worker_binary_id,
-                long_poll_timeout: converted_long_poll_timeout,
+                long_poll_timeout: pyo3_chrono_duration_to_std_duration(long_poll_timeout)?,
                 tls_cfg: match tls_cfg {
                     None => None,
                     Some(i) => Some(i.internal),

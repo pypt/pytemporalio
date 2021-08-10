@@ -8,7 +8,8 @@ use prost_types::{
     Duration as ProstDuration,
     Timestamp as ProstTimestamp,
 };
-
+use temporal_sdk_core::protos::coresdk::common::Payload;
+use crate::protos::WrappedPayload;
 
 // FIXME where does ".0" point to?
 pub(crate) fn pyo3_chrono_duration_to_std_duration(duration: pyo3_chrono::Duration) -> Result<StdDuration, crate::PyErr> {
@@ -55,4 +56,12 @@ pub(crate) fn prost_types_timestamp_to_u128(timestamp: Option<ProstTimestamp>) -
         None => None,
         Some(ts) => Some(ts.seconds as u128 * 1000 + ts.nanos as u128),
     }
+}
+
+
+pub(crate) fn vec_of_payloads_to_vec_of_wrapped_payloads(payloads: Vec<Payload>) -> Vec<WrappedPayload> {
+    payloads.iter().map(|x| WrappedPayload {
+        metadata: x.metadata.clone(),
+        data: x.data.clone(),
+    }).collect::<Vec<_>>()
 }

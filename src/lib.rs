@@ -37,6 +37,8 @@ use protos::{
     WrappedStart,
     WrappedCancel,
     WrappedWorkflowExecution,
+    WrappedRetryPolicy,
+    WrappedVariant,
 };
 use worker::WrappedWorkerConfig;
 
@@ -55,8 +57,8 @@ use temporal_sdk_core::{
 use utils::{
     prost_types_timestamp_to_u128,
     prost_duration_to_pyo3_chrono_duration,
+    vec_of_payloads_to_vec_of_wrapped_payloads,
 };
-use crate::protos::{WrappedRetryPolicy, WrappedVariant};
 
 
 #[pyclass(name = "CoreInitOptions")]
@@ -125,10 +127,7 @@ impl WrappedCore {
                                         start_workflow: Some(WrappedStartWorkflow {
                                             workflow_type: matched_job.workflow_type,
                                             workflow_id: matched_job.workflow_id,
-                                            arguments: matched_job.arguments.iter().map(|x| WrappedPayload {
-                                                metadata: x.metadata.clone(),
-                                                data: x.data.clone(),
-                                            }).collect::<Vec<_>>(),
+                                            arguments: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.arguments),
                                             randomness_seed: matched_job.randomness_seed,
 
                                             // FIXME we could probably do less copying here
@@ -187,10 +186,7 @@ impl WrappedCore {
                                             WrappedQueryWorkflow {
                                                 query_id: matched_job.query_id,
                                                 query_type: matched_job.query_type,
-                                                arguments: matched_job.arguments.iter().map(|x| WrappedPayload {
-                                                    metadata: x.metadata.clone(),
-                                                    data: x.data.clone(),
-                                                }).collect::<Vec<_>>(),
+                                                arguments: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.arguments),
                                             }
                                         ),
                                         cancel_workflow: None,
@@ -207,10 +203,7 @@ impl WrappedCore {
                                         query_workflow: None,
                                         cancel_workflow: Some(
                                             WrappedCancelWorkflow {
-                                                details: matched_job.details.iter().map(|x| WrappedPayload {
-                                                    metadata: x.metadata.clone(),
-                                                    data: x.data.clone(),
-                                                }).collect::<Vec<_>>(),
+                                                details: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.details),
                                             }
                                         ),
                                         signal_workflow: None,
@@ -228,10 +221,7 @@ impl WrappedCore {
                                         signal_workflow: Some(
                                             WrappedSignalWorkflow {
                                                 signal_name: matched_job.signal_name,
-                                                input: matched_job.input.iter().map(|x| WrappedPayload {
-                                                    metadata: x.metadata.clone(),
-                                                    data: x.data.clone(),
-                                                }).collect::<Vec<_>>(),
+                                                input: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.input),
                                                 identity: matched_job.identity,
                                             }
                                         ),
@@ -382,14 +372,8 @@ impl WrappedCore {
                                                         String::from(k),
                                                         WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
                                                     )).collect(),
-                                                    input: task.input.iter().map(|x| WrappedPayload {
-                                                        metadata: x.metadata.clone(),
-                                                        data: x.data.clone(),
-                                                    }).collect::<Vec<_>>(),
-                                                    heartbeat_details: task.heartbeat_details.iter().map(|x| WrappedPayload {
-                                                        metadata: x.metadata.clone(),
-                                                        data: x.data.clone(),
-                                                    }).collect::<Vec<_>>(),
+                                                    input: vec_of_payloads_to_vec_of_wrapped_payloads(task.input),
+                                                    heartbeat_details: vec_of_payloads_to_vec_of_wrapped_payloads(task.heartbeat_details),
                                                     scheduled_time: prost_types_timestamp_to_u128(task.scheduled_time),
                                                     current_attempt_scheduled_time: prost_types_timestamp_to_u128(task.current_attempt_scheduled_time),
                                                     started_time: prost_types_timestamp_to_u128(task.started_time),

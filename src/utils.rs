@@ -10,6 +10,7 @@ use prost_types::{
 };
 use temporal_sdk_core::protos::coresdk::common::Payload;
 use crate::protos::WrappedPayload;
+use std::collections::HashMap;
 
 // FIXME where does ".0" point to?
 pub(crate) fn pyo3_chrono_duration_to_std_duration(duration: pyo3_chrono::Duration) -> Result<StdDuration, crate::PyErr> {
@@ -59,9 +60,20 @@ pub(crate) fn prost_types_timestamp_to_u128(timestamp: Option<ProstTimestamp>) -
 }
 
 
+// FIXME rename to a shorter name
 pub(crate) fn vec_of_payloads_to_vec_of_wrapped_payloads(payloads: Vec<Payload>) -> Vec<WrappedPayload> {
     payloads.iter().map(|x| WrappedPayload {
         metadata: x.metadata.clone(),
         data: x.data.clone(),
     }).collect::<Vec<_>>()
+}
+
+
+// FIXME rename to a shorter name
+pub(crate) fn hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(payloads: HashMap<String, Payload>) -> HashMap<String, WrappedPayload> {
+    // FIXME we could probably do less copying here
+    payloads.iter().map(|(k, v)| (
+        String::from(k),
+        WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
+    )).collect()
 }

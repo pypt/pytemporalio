@@ -62,6 +62,7 @@ use utils::{
     prost_types_timestamp_to_u128,
     prost_duration_to_pyo3_chrono_duration,
     vec_of_payloads_to_vec_of_wrapped_payloads,
+    hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads,
 };
 
 
@@ -134,12 +135,7 @@ impl WrappedCore {
                                             workflow_id: matched_job.workflow_id,
                                             arguments: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.arguments),
                                             randomness_seed: matched_job.randomness_seed,
-
-                                            // FIXME we could probably do less copying here
-                                            headers: matched_job.headers.iter().map(|(k, v)| (
-                                                String::from(k),
-                                                WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
-                                            )).collect(),
+                                            headers: hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(matched_job.headers),
                                         }),
                                         fire_timer: None,
                                         update_random_seed: None,
@@ -374,10 +370,7 @@ impl WrappedCore {
                                                         }),
                                                     },
                                                     activity_type: task.activity_type,
-                                                    header_fields: task.header_fields.iter().map(|(k, v)| (
-                                                        String::from(k),
-                                                        WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
-                                                    )).collect(),
+                                                    header_fields: hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(task.header_fields),
                                                     input: vec_of_payloads_to_vec_of_wrapped_payloads(task.input),
                                                     heartbeat_details: vec_of_payloads_to_vec_of_wrapped_payloads(task.heartbeat_details),
                                                     scheduled_time: prost_types_timestamp_to_u128(task.scheduled_time),

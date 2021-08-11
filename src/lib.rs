@@ -128,14 +128,14 @@ impl WrappedCore {
                             // FIXME wrap around 120 characters
                             // FIXME use a builder pattern or something like that to avoid the Nones
                             Some(job) => Some(match job {
-                                wf_activation_job::Variant::StartWorkflow(matched_job) => {
+                                wf_activation_job::Variant::StartWorkflow(start_workflow_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: Some(WrappedStartWorkflow {
-                                            workflow_type: matched_job.workflow_type,
-                                            workflow_id: matched_job.workflow_id,
-                                            arguments: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.arguments),
-                                            randomness_seed: matched_job.randomness_seed,
-                                            headers: hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(matched_job.headers),
+                                            workflow_type: start_workflow_job.workflow_type,
+                                            workflow_id: start_workflow_job.workflow_id,
+                                            arguments: vec_of_payloads_to_vec_of_wrapped_payloads(start_workflow_job.arguments),
+                                            randomness_seed: start_workflow_job.randomness_seed,
+                                            headers: hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(start_workflow_job.headers),
                                         }),
                                         fire_timer: None,
                                         update_random_seed: None,
@@ -146,12 +146,12 @@ impl WrappedCore {
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::FireTimer(matched_job) => {
+                                wf_activation_job::Variant::FireTimer(fire_timer_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: Some(
                                             WrappedFireTimer {
-                                                timer_id: matched_job.timer_id,
+                                                timer_id: fire_timer_job.timer_id,
                                             }
                                         ),
                                         update_random_seed: None,
@@ -162,13 +162,13 @@ impl WrappedCore {
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::UpdateRandomSeed(matched_job) => {
+                                wf_activation_job::Variant::UpdateRandomSeed(update_random_seed_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: None,
                                         update_random_seed: Some(
                                             WrappedUpdateRandomSeed {
-                                                randomness_seed: matched_job.randomness_seed,
+                                                randomness_seed: update_random_seed_job.randomness_seed,
                                             }
                                         ),
                                         query_workflow: None,
@@ -178,16 +178,16 @@ impl WrappedCore {
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::QueryWorkflow(matched_job) => {
+                                wf_activation_job::Variant::QueryWorkflow(query_workflow_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: None,
                                         update_random_seed: None,
                                         query_workflow: Some(
                                             WrappedQueryWorkflow {
-                                                query_id: matched_job.query_id,
-                                                query_type: matched_job.query_type,
-                                                arguments: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.arguments),
+                                                query_id: query_workflow_job.query_id,
+                                                query_type: query_workflow_job.query_type,
+                                                arguments: vec_of_payloads_to_vec_of_wrapped_payloads(query_workflow_job.arguments),
                                             }
                                         ),
                                         cancel_workflow: None,
@@ -196,7 +196,7 @@ impl WrappedCore {
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::CancelWorkflow(matched_job) => {
+                                wf_activation_job::Variant::CancelWorkflow(cancel_workflow_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: None,
@@ -204,7 +204,7 @@ impl WrappedCore {
                                         query_workflow: None,
                                         cancel_workflow: Some(
                                             WrappedCancelWorkflow {
-                                                details: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.details),
+                                                details: vec_of_payloads_to_vec_of_wrapped_payloads(cancel_workflow_job.details),
                                             }
                                         ),
                                         signal_workflow: None,
@@ -212,7 +212,7 @@ impl WrappedCore {
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::SignalWorkflow(matched_job) => {
+                                wf_activation_job::Variant::SignalWorkflow(signal_workflow_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: None,
@@ -221,16 +221,16 @@ impl WrappedCore {
                                         cancel_workflow: None,
                                         signal_workflow: Some(
                                             WrappedSignalWorkflow {
-                                                signal_name: matched_job.signal_name,
-                                                input: vec_of_payloads_to_vec_of_wrapped_payloads(matched_job.input),
-                                                identity: matched_job.identity,
+                                                signal_name: signal_workflow_job.signal_name,
+                                                input: vec_of_payloads_to_vec_of_wrapped_payloads(signal_workflow_job.input),
+                                                identity: signal_workflow_job.identity,
                                             }
                                         ),
                                         resolve_activity: None,
                                         remove_from_cache: None,
                                     }
                                 }
-                                wf_activation_job::Variant::ResolveActivity(matched_job) => {
+                                wf_activation_job::Variant::ResolveActivity(resolve_activity_job) => {
                                     WrappedWfActivationJob {
                                         start_workflow: None,
                                         fire_timer: None,
@@ -240,17 +240,17 @@ impl WrappedCore {
                                         signal_workflow: None,
                                         resolve_activity: Some(
                                             WrappedResolveActivity {
-                                                activity_id: matched_job.activity_id,
-                                                result: match matched_job.result {
+                                                activity_id: resolve_activity_job.activity_id,
+                                                result: match resolve_activity_job.result {
                                                     None => None,
                                                     Some(result) => match result.status {
                                                         // FIXME it should then be a ResolveActivity with empty status
                                                         None => None,
                                                         Some(status) => Some(match status {
-                                                            activity_result::Status::Completed(matched_status) => {
+                                                            activity_result::Status::Completed(completed_status) => {
                                                                 WrappedActivityResult {
                                                                     completed: Some(WrappedSuccess {
-                                                                        result: match matched_status.result {
+                                                                        result: match completed_status.result {
                                                                             None => None,
                                                                             Some(result) => Some(WrappedPayload {
                                                                                 metadata: result.metadata,
@@ -262,11 +262,11 @@ impl WrappedCore {
                                                                     canceled: None,
                                                                 }
                                                             }
-                                                            activity_result::Status::Failed(matched_status) => {
+                                                            activity_result::Status::Failed(failed_status) => {
                                                                 WrappedActivityResult {
                                                                     completed: None,
                                                                     failed: Some(WrappedFailure {
-                                                                        failure: match matched_status.failure {
+                                                                        failure: match failed_status.failure {
                                                                             None => None,
                                                                             Some(failure) => Some(WrappedUserCodeFailure {
                                                                                 message: failure.message,
@@ -283,12 +283,12 @@ impl WrappedCore {
                                                                     canceled: None,
                                                                 }
                                                             }
-                                                            activity_result::Status::Canceled(matched_status) => {
+                                                            activity_result::Status::Canceled(canceled_status) => {
                                                                 WrappedActivityResult {
                                                                     completed: None,
                                                                     failed: None,
                                                                     canceled: Some(WrappedCancelation {
-                                                                        details: match matched_status.details {
+                                                                        details: match canceled_status.details {
                                                                             None => None,
                                                                             Some(details) => Some(WrappedPayload {
                                                                                 metadata: details.metadata,

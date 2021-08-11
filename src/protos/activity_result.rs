@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-use crate::protos::{
+use crate::protos::common::{
     WrappedPayload,
     WrappedUserCodeFailure,
 };

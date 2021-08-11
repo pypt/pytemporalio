@@ -1,7 +1,1 @@
-mod gateway;
-
-pub use gateway::{
-    WrappedClientTlsConfig,
-    WrappedServerGatewayOptions,
-    WrappedTlsConfig,
-};
+pub(crate) mod gateway;

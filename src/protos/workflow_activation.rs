@@ -1,10 +1,11 @@
-use pyo3::prelude::*;
-
-
 use std::collections::HashMap;
 
-use crate::protos::WrappedActivityResult;
-use crate::protos::WrappedPayload;
+use pyo3::prelude::*;
+
+use crate::protos::{
+    common::WrappedPayload,
+    activity_result::WrappedActivityResult,
+};
 
 #[pyclass(name = "StartWorkflow")]
 #[derive(Clone)]

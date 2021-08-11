@@ -1,10 +1,9 @@
-use pyo3::prelude::*;
-
 use std::collections::HashMap;
 
+use pyo3::prelude::*;
 use pyo3_chrono;
 
-use crate::protos::{
+use crate::protos::common::{
     WrappedPayload,
     WrappedWorkflowExecution,
     WrappedRetryPolicy,

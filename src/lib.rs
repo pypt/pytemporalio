@@ -1,7 +1,17 @@
+use std::sync::Arc;
+
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use pyo3::exceptions::PyOSError;
 use pyo3_asyncio;
+use temporal_sdk_core::{
+    init,
+    Core,
+    CoreInitOptions,
+    protos::coresdk::workflow_activation::wf_activation_job,
+    protos::coresdk::activity_result::activity_result,
+    protos::coresdk::activity_task::activity_task,
+};
 
 mod errors;
 mod pollers;
@@ -14,48 +24,45 @@ use errors::{
     PollWfError,
     PollActivityError,
 };
+
 use pollers::{
-    WrappedServerGatewayOptions,
-    WrappedClientTlsConfig,
-    WrappedTlsConfig,
+    gateway::{
+        WrappedServerGatewayOptions,
+        WrappedClientTlsConfig,
+        WrappedTlsConfig,
+    },
 };
 
-// FIXME make them more hierarchical or something
 use protos::{
-    WrappedPayload,
-    WrappedWfActivation,
-    WrappedWfActivationJob,
-    WrappedStartWorkflow,
-    WrappedFireTimer,
-    WrappedUpdateRandomSeed,
-    WrappedQueryWorkflow,
-    WrappedCancelWorkflow,
-    WrappedSignalWorkflow,
-    WrappedResolveActivity,
-    WrappedActivityResult,
-    WrappedSuccess,
-    WrappedCancelation,
-    WrappedFailure,
-    WrappedUserCodeFailure,
-    WrappedActivityTask,
-    WrappedStart,
-    WrappedCancel,
-    WrappedWorkflowExecution,
-    WrappedRetryPolicy,
-    WrappedVariant,
-};
-use worker::WrappedWorkerConfig;
-
-
-use std::sync::Arc;
-
-use temporal_sdk_core::{
-    init,
-    Core,
-    CoreInitOptions,
-    protos::coresdk::workflow_activation::wf_activation_job,
-    protos::coresdk::activity_result::activity_result,
-    protos::coresdk::activity_task::activity_task,
+    activity_result::{
+        WrappedActivityResult,
+        WrappedSuccess,
+        WrappedCancelation,
+        WrappedFailure,
+    },
+    activity_task::{
+        WrappedActivityTask,
+        WrappedVariant,
+        WrappedStart,
+        WrappedCancel,
+    },
+    common::{
+        WrappedPayload,
+        WrappedUserCodeFailure,
+        WrappedWorkflowExecution,
+        WrappedRetryPolicy,
+    },
+    workflow_activation::{
+        WrappedWfActivation,
+        WrappedWfActivationJob,
+        WrappedStartWorkflow,
+        WrappedFireTimer,
+        WrappedUpdateRandomSeed,
+        WrappedQueryWorkflow,
+        WrappedCancelWorkflow,
+        WrappedSignalWorkflow,
+        WrappedResolveActivity,
+    },
 };
 
 use utils::{
@@ -64,6 +71,8 @@ use utils::{
     vec_of_payloads_to_vec_of_wrapped_payloads,
     hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads,
 };
+
+use worker::config::WrappedWorkerConfig;
 
 
 #[pyclass(name = "CoreInitOptions")]

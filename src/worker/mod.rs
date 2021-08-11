@@ -1,3 +1,1 @@
-mod config;
-
-pub use config::WrappedWorkerConfig;
+pub(crate) mod config;

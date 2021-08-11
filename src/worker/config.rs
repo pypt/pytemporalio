@@ -1,10 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
-
-// use std::{fmt::{Debug, Formatter}};
-
 use pyo3_chrono;
-
 use temporal_sdk_core::WorkerConfig;
 
 #[pyclass(name = "WorkerConfig")]

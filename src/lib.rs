@@ -14,7 +14,11 @@ use errors::{
     PollWfError,
     PollActivityError,
 };
-use pollers::WrappedServerGatewayOptions;
+use pollers::{
+    WrappedServerGatewayOptions,
+    WrappedClientTlsConfig,
+    WrappedTlsConfig,
+};
 
 // FIXME make them more hierarchical or something
 use protos::{
@@ -117,7 +121,6 @@ impl WrappedCore {
                 Ok(wf_activation) => {
                     // FIXME return the activation
                     Python::with_gil(|py| {
-
                         let wrapped_jobs: Vec<Option<WrappedWfActivationJob>> = wf_activation.jobs.iter().map(|x| match x.variant.clone() {
                             None => None,
 
@@ -386,7 +389,7 @@ impl WrappedCore {
                                                     heartbeat_timeout: prost_duration_to_pyo3_chrono_duration(task.heartbeat_timeout)?,
                                                     retry_policy: match task.retry_policy {
                                                         None => None,
-                                                        Some(retry_policy) => Some( WrappedRetryPolicy{
+                                                        Some(retry_policy) => Some(WrappedRetryPolicy {
                                                             initial_interval: prost_duration_to_pyo3_chrono_duration(retry_policy.initial_interval)?,
                                                             backoff_coefficient: retry_policy.backoff_coefficient,
                                                             maximum_interval: prost_duration_to_pyo3_chrono_duration(retry_policy.maximum_interval)?,
@@ -397,15 +400,15 @@ impl WrappedCore {
                                                 }),
                                                 cancel: None,
                                             }
-                                        },
+                                        }
                                         activity_task::Variant::Cancel(task) => {
                                             WrappedVariant {
                                                 start: None,
                                                 cancel: Some(WrappedCancel {
                                                     reason: task.reason,
-                                                })
+                                                }),
                                             }
-                                        },
+                                        }
                                     }
                                 )
                             },
@@ -440,32 +443,67 @@ fn wrapped_init(py: Python, opts: WrappedCoreInitOptions) -> PyResult<&PyAny> {
 
 
 #[pymodule]
-pub fn pytemporalio(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(wrapped_init, m)?)?;
+pub fn pytemporalio(py: Python<'_>, root_module: &PyModule) -> PyResult<()> {
+    let errors_module = PyModule::new(py, "errors")?;
+    root_module.add_submodule(errors_module)?;
+    errors_module.add("WorkerRegistrationError", py.get_type::<WorkerRegistrationError>())?;
+    errors_module.add("PollWfError", py.get_type::<PollWfError>())?;
 
-    m.add_class::<WrappedActivityResult>()?;
-    m.add_class::<WrappedCancelation>()?;
-    m.add_class::<WrappedCancelWorkflow>()?;
-    m.add_class::<WrappedCore>()?;
-    m.add_class::<WrappedCoreInitOptions>()?;
-    m.add_class::<WrappedFailure>()?;
-    m.add_class::<WrappedFireTimer>()?;
-    m.add_class::<WrappedPayload>()?;
-    m.add_class::<WrappedQueryWorkflow>()?;
-    m.add_class::<WrappedResolveActivity>()?;
-    m.add_class::<WrappedServerGatewayOptions>()?;
-    m.add_class::<WrappedSignalWorkflow>()?;
-    m.add_class::<WrappedStartWorkflow>()?;
-    m.add_class::<WrappedSuccess>()?;
-    m.add_class::<WrappedUpdateRandomSeed>()?;
-    m.add_class::<WrappedUserCodeFailure>()?;
-    m.add_class::<WrappedWfActivation>()?;
-    m.add_class::<WrappedWfActivationJob>()?;
-    m.add_class::<WrappedWorkerConfig>()?;
+    let pollers_module = PyModule::new(py, "pollers")?;
+    root_module.add_submodule(pollers_module)?;
+    root_module.add_function(wrap_pyfunction!(wrapped_init, root_module)?)?;
+    root_module.add_class::<WrappedCore>()?;
+    root_module.add_class::<WrappedCoreInitOptions>()?;
 
+    // FIXME iterate over Vec of traits here and elsewhere somehow
+    let pollers_gateway_module = PyModule::new(py, "gateway")?;
+    pollers_module.add_submodule(pollers_gateway_module)?;
+    pollers_gateway_module.add_class::<WrappedClientTlsConfig>()?;
+    pollers_gateway_module.add_class::<WrappedServerGatewayOptions>()?;
+    pollers_gateway_module.add_class::<WrappedTlsConfig>()?;
 
-    m.add("WorkerRegistrationError", py.get_type::<WorkerRegistrationError>())?;
-    m.add("PollWfError", py.get_type::<PollWfError>())?;
+    let protos_module = PyModule::new(py, "protos")?;
+    root_module.add_submodule(protos_module)?;
+
+    let protos_activity_result_module = PyModule::new(py, "activity_result")?;
+    protos_module.add_submodule(protos_activity_result_module)?;
+    protos_activity_result_module.add_class::<WrappedActivityResult>()?;
+    protos_activity_result_module.add_class::<WrappedSuccess>()?;
+    protos_activity_result_module.add_class::<WrappedCancelation>()?;
+    protos_activity_result_module.add_class::<WrappedFailure>()?;
+
+    let protos_activity_task_module = PyModule::new(py, "activity_task")?;
+    protos_module.add_submodule(protos_activity_task_module)?;
+    protos_activity_task_module.add_class::<WrappedActivityTask>()?;
+    protos_activity_task_module.add_class::<WrappedVariant>()?;
+    protos_activity_task_module.add_class::<WrappedStart>()?;
+    protos_activity_task_module.add_class::<WrappedCancel>()?;
+
+    let protos_common_module = PyModule::new(py, "common")?;
+    protos_module.add_submodule(protos_common_module)?;
+    protos_common_module.add_class::<WrappedPayload>()?;
+    protos_common_module.add_class::<WrappedUserCodeFailure>()?;
+    protos_common_module.add_class::<WrappedWorkflowExecution>()?;
+    protos_common_module.add_class::<WrappedRetryPolicy>()?;
+
+    let protos_workflow_activation_module = PyModule::new(py, "workflow_activation")?;
+    protos_module.add_submodule(protos_workflow_activation_module)?;
+    protos_workflow_activation_module.add_class::<WrappedWfActivation>()?;
+    protos_workflow_activation_module.add_class::<WrappedWfActivationJob>()?;
+    protos_workflow_activation_module.add_class::<WrappedStartWorkflow>()?;
+    protos_workflow_activation_module.add_class::<WrappedFireTimer>()?;
+    protos_workflow_activation_module.add_class::<WrappedUpdateRandomSeed>()?;
+    protos_workflow_activation_module.add_class::<WrappedQueryWorkflow>()?;
+    protos_workflow_activation_module.add_class::<WrappedCancelWorkflow>()?;
+    protos_workflow_activation_module.add_class::<WrappedSignalWorkflow>()?;
+    protos_workflow_activation_module.add_class::<WrappedResolveActivity>()?;
+
+    let worker_module = PyModule::new(py, "worker")?;
+    root_module.add_submodule(worker_module)?;
+
+    let worker_config_module = PyModule::new(py, "config")?;
+    worker_module.add_submodule(worker_config_module)?;
+    worker_config_module.add_class::<WrappedWorkerConfig>()?;
 
     Ok(())
 }

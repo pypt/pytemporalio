@@ -91,7 +91,8 @@ struct WrappedCore {
 impl WrappedCore {
     fn register_worker<'p>(&self, py: Python<'p>, config: WrappedWorkerConfig) -> PyResult<&'p PyAny> {
         let internal = self.internal.clone();
-        pyo3_asyncio::tokio::local_future_into_py(py, async move {
+        let current_loop = pyo3_asyncio::get_running_loop(py)?;
+        pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {
             match internal.register_worker(config.internal).await {
                 Err(err) => Err(WorkerRegistrationError::new_err(format!(
                     "{}",
@@ -106,7 +107,8 @@ impl WrappedCore {
 
     fn poll_workflow_task<'p>(&self, py: Python<'p>, task_queue: String) -> PyResult<&'p PyAny> {
         let internal = self.internal.clone();
-        pyo3_asyncio::tokio::local_future_into_py(py, async move {
+        let current_loop = pyo3_asyncio::get_running_loop(py)?;
+        pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {
             match internal.poll_workflow_task(task_queue.as_str()).await {
                 Err(err) => Err(PollWfError::new_err(format!(
                     "{}",
@@ -337,7 +339,8 @@ impl WrappedCore {
 
     fn poll_activity_task<'p>(&self, py: Python<'p>, task_queue: String) -> PyResult<&'p PyAny> {
         let internal = self.internal.clone();
-        pyo3_asyncio::tokio::local_future_into_py(py, async move {
+        let current_loop = pyo3_asyncio::get_running_loop(py)?;
+        pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {
             match internal.poll_activity_task(task_queue.as_str()).await {
 
                 // FIXME PollActivityError
@@ -418,7 +421,8 @@ impl WrappedCore {
 
 #[pyfunction(name = "init")]
 fn wrapped_init(py: Python, opts: WrappedCoreInitOptions) -> PyResult<&PyAny> {
-    pyo3_asyncio::tokio::local_future_into_py(py, async move {
+    let current_loop = pyo3_asyncio::get_running_loop(py)?;
+    pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {
         match init(opts.internal).await {
             Err(err) => return Err(PyOSError::new_err(format!(
                 "{}",

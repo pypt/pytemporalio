@@ -12,3 +12,6 @@ FIXME make all errors specific
 FIXME extend error descriptions
 FIXME rename "internal" to something that makes more sense
 FIXME get rid of telemetry
+FIXME ensure that oneof "enums" get only one field set
+FIXME prost.Timestamp to datetime instead of u64
+FIXME in "if let ..." cases, make compiler verify that all fields get tested somehow

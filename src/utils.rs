@@ -1,5 +1,6 @@
-use std::time::Duration as StdDuration;
+use std::convert::TryInto;
 use std::collections::HashMap;
+use std::time::Duration as StdDuration;
 
 use chrono;
 use prost_types::{
@@ -12,8 +13,8 @@ use temporal_sdk_core::protos::coresdk::common::Payload;
 
 use crate::protos::common::WrappedPayload;
 
-// FIXME where does ".0" point to?
 pub(crate) fn pyo3_chrono_duration_to_std_duration(duration: pyo3_chrono::Duration) -> Result<StdDuration, crate::PyErr> {
+    // FIXME where does ".0" point to?
     match duration.0.to_std() {
         Ok(std_duration) => { Ok(std_duration) }
         Err(e) => Err(PyValueError::new_err(format!(
@@ -21,6 +22,19 @@ pub(crate) fn pyo3_chrono_duration_to_std_duration(duration: pyo3_chrono::Durati
             e.to_string()
         ))),
     }
+}
+
+
+pub(crate) fn std_duration_to_pyo3_chrono_duration(duration: StdDuration) -> Result<pyo3_chrono::Duration, crate::PyErr> {
+    let chrono_duration = match chrono::Duration::from_std(duration) {
+        Ok(result_duration) => result_duration,
+        Err(err) => return Err(PyValueError::new_err(format!(
+            "{}",
+            err
+        ))),
+    };
+
+    Ok(pyo3_chrono::Duration::from(chrono_duration))
 }
 
 
@@ -51,6 +65,17 @@ pub(crate) fn prost_duration_to_pyo3_chrono_duration(duration: Option<ProstDurat
 }
 
 
+pub(crate) fn pyo3_chrono_duration_to_prost_duration(duration: Option<pyo3_chrono::Duration>) -> Result<Option<ProstDuration>, crate::PyErr> {
+    match duration {
+        None => Ok(None),
+        Some(d) => {
+            let std_duration = pyo3_chrono_duration_to_std_duration(d)?;
+            Ok(Some(ProstDuration::from(std_duration)))
+        }
+    }
+}
+
+
 // FIXME make sure duration since epoch works fine
 pub(crate) fn prost_types_timestamp_to_u128(timestamp: Option<ProstTimestamp>) -> Option<u128> {
     match timestamp {
@@ -60,12 +85,31 @@ pub(crate) fn prost_types_timestamp_to_u128(timestamp: Option<ProstTimestamp>) -
 }
 
 
+// FIXME untested at all
+pub(crate) fn u128_to_prost_types_timestamp(timestamp: Option<u128>) -> Option<ProstTimestamp> {
+    match timestamp {
+        None => None,
+        Some(ts) => {
+            let seconds = ts / 1000;
+            let nanos = ts - (seconds * 1000);
+            Some(ProstTimestamp {
+                seconds: seconds.try_into().unwrap(),
+                nanos: nanos.try_into().unwrap(),
+            })
+        }
+    }
+}
+
+
 // FIXME rename to a shorter name
 pub(crate) fn vec_of_payloads_to_vec_of_wrapped_payloads(payloads: Vec<Payload>) -> Vec<WrappedPayload> {
-    payloads.iter().map(|x| WrappedPayload {
-        metadata: x.metadata.clone(),
-        data: x.data.clone(),
-    }).collect::<Vec<_>>()
+    payloads.iter().map(|x| WrappedPayload::from(x)).collect::<Vec<_>>()
+}
+
+
+// FIXME rename to a shorter name
+pub(crate) fn vec_of_wrapped_payloads_to_vec_of_payloads(payloads: Vec<WrappedPayload>) -> Vec<Payload> {
+    payloads.iter().map(|x| Payload::from(x)).collect::<Vec<_>>()
 }
 
 
@@ -74,6 +118,16 @@ pub(crate) fn hashmap_of_string_payloads_to_hashmap_of_string_wrapped_payloads(p
     // FIXME we could probably do less copying here
     payloads.iter().map(|(k, v)| (
         String::from(k),
-        WrappedPayload { metadata: v.metadata.clone(), data: v.data.clone() }
+        WrappedPayload::from(v)
+    )).collect()
+}
+
+
+// FIXME rename to a shorter name
+pub(crate) fn hashmap_of_string_wrapped_payloads_to_hashmap_of_string_payloads(payloads: HashMap<String, WrappedPayload>) -> HashMap<String, Payload> {
+    // FIXME we could probably do less copying here
+    payloads.iter().map(|(k, v)| (
+        String::from(k),
+        Payload::from(v)
     )).collect()
 }

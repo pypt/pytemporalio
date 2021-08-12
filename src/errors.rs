@@ -8,3 +8,5 @@ create_exception!(pytemporalio, PollWfError, pyo3::exceptions::PyException);
 create_exception!(pytemporalio, PollActivityError, pyo3::exceptions::PyException);
 
 create_exception!(pytemporalio, CompleteWfError, pyo3::exceptions::PyException);
+
+create_exception!(pytemporalio, CompleteActivityError, pyo3::exceptions::PyException);

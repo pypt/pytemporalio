@@ -11,7 +11,10 @@ use temporal_sdk_core::{
     CoreInitOptions,
     ServerGatewayOptions,
     WorkerConfig,
-    protos::coresdk::workflow_completion::WfActivationCompletion,
+    protos::coresdk::{
+        ActivityTaskCompletion,
+        workflow_completion::WfActivationCompletion,
+    },
 };
 
 mod errors;
@@ -25,6 +28,7 @@ use errors::{
     PollWfError,
     PollActivityError,
     CompleteWfError,
+    CompleteActivityError,
 };
 
 use pollers::{
@@ -36,6 +40,7 @@ use pollers::{
 };
 
 use protos::{
+    WrappedActivityTaskCompletion,
     activity_result::{
         WrappedActivityResult,
         WrappedStatus,
@@ -116,6 +121,7 @@ impl WrappedCoreInitOptions {
 
 #[pyclass(name = "Core")]
 struct WrappedCore {
+    // FIXME rename to something more sensible
     pub(crate) internal: Arc<dyn Core>,
 }
 
@@ -171,6 +177,22 @@ impl WrappedCore {
                         let wrapped_activity_task = WrappedActivityTask::try_from(activity_task)?;
                         Ok(wrapped_activity_task.into_py(py))
                     })
+                }
+            }
+        })
+    }
+
+    fn complete_activity_task<'p>(&self, py: Python<'p>, completion: WrappedActivityTaskCompletion) -> PyResult<&'p PyAny> {
+        let internal = self.internal.clone();
+        let current_loop = pyo3_asyncio::get_running_loop(py)?;
+        pyo3_asyncio::tokio::future_into_py_with_loop(current_loop, async move {
+            match internal.complete_activity_task(ActivityTaskCompletion::try_from(completion)?).await {
+                Err(err) => Err(CompleteActivityError::new_err(format!(
+                    "{}",
+                    err.to_string()
+                ))),
+                Ok(()) => {
+                    Python::with_gil(|py| Ok(py.None()))
                 }
             }
         })
@@ -235,6 +257,7 @@ pub fn pytemporalio(py: Python<'_>, root_module: &PyModule) -> PyResult<()> {
 
     let protos_module = PyModule::new(py, "protos")?;
     root_module.add_submodule(protos_module)?;
+    protos_module.add_class::<WrappedActivityTaskCompletion>()?;
 
     let protos_activity_result_module = PyModule::new(py, "activity_result")?;
     protos_module.add_submodule(protos_activity_result_module)?;

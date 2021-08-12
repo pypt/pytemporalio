@@ -219,6 +219,10 @@ impl WrappedCore {
     fn record_activity_heartbeat(&self, details: WrappedActivityHeartbeat) {
         self.internal.record_activity_heartbeat(ActivityHeartbeat::from(details))
     }
+
+    fn request_workflow_eviction(&self, run_id: String) {
+        self.internal.request_workflow_eviction(run_id.as_str())
+    }
 }
 
 #[pyfunction(name = "init")]

@@ -358,104 +358,87 @@ impl WrappedVariant {
 
 impl From<wf_activation_job::Variant> for WrappedVariant {
     fn from(i: wf_activation_job::Variant) -> Self {
-        // FIXME use a builder pattern or something like that to avoid the Nones
         match i {
-            wf_activation_job::Variant::StartWorkflow(start_workflow_job) => {
-                WrappedVariant {
-                    start_workflow: Some(WrappedStartWorkflow::from(start_workflow_job)),
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::FireTimer(fire_timer_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: Some(WrappedFireTimer::from(fire_timer_job)),
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::UpdateRandomSeed(update_random_seed_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: Some(WrappedUpdateRandomSeed::from(update_random_seed_job)),
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::QueryWorkflow(query_workflow_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: Some(WrappedQueryWorkflow::from(query_workflow_job)),
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::CancelWorkflow(cancel_workflow_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: Some(WrappedCancelWorkflow::from(cancel_workflow_job)),
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::SignalWorkflow(signal_workflow_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: Some(WrappedSignalWorkflow::from(signal_workflow_job)),
-                    resolve_activity: None,
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::ResolveActivity(resolve_activity_job) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: Some(WrappedResolveActivity::from(resolve_activity_job)),
-                    remove_from_cache: None,
-                }
-            }
-            wf_activation_job::Variant::RemoveFromCache(remove_from_cache) => {
-                WrappedVariant {
-                    start_workflow: None,
-                    fire_timer: None,
-                    update_random_seed: None,
-                    query_workflow: None,
-                    cancel_workflow: None,
-                    signal_workflow: None,
-                    resolve_activity: None,
-                    remove_from_cache: Some(remove_from_cache),
-                }
-            }
+            wf_activation_job::Variant::StartWorkflow(start_workflow_job) => WrappedVariant {
+                start_workflow: Some(WrappedStartWorkflow::from(start_workflow_job)),
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::FireTimer(fire_timer_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: Some(WrappedFireTimer::from(fire_timer_job)),
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::UpdateRandomSeed(update_random_seed_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: Some(WrappedUpdateRandomSeed::from(update_random_seed_job)),
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::QueryWorkflow(query_workflow_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: Some(WrappedQueryWorkflow::from(query_workflow_job)),
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::CancelWorkflow(cancel_workflow_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: Some(WrappedCancelWorkflow::from(cancel_workflow_job)),
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::SignalWorkflow(signal_workflow_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: Some(WrappedSignalWorkflow::from(signal_workflow_job)),
+                resolve_activity: None,
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::ResolveActivity(resolve_activity_job) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: Some(WrappedResolveActivity::from(resolve_activity_job)),
+                remove_from_cache: None,
+            },
+            wf_activation_job::Variant::RemoveFromCache(remove_from_cache) => WrappedVariant {
+                start_workflow: None,
+                fire_timer: None,
+                update_random_seed: None,
+                query_workflow: None,
+                cancel_workflow: None,
+                signal_workflow: None,
+                resolve_activity: None,
+                remove_from_cache: Some(remove_from_cache),
+            },
         }
     }
 }

@@ -38,6 +38,7 @@ pub(crate) fn std_duration_to_pyo3_chrono_duration(duration: StdDuration) -> Res
 }
 
 
+// FIXME no idea if this works
 pub(crate) fn prost_duration_to_pyo3_chrono_duration(duration: Option<ProstDuration>) -> Result<Option<pyo3_chrono::Duration>, crate::PyErr> {
     match duration {
         None => Ok(None),

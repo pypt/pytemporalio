@@ -13,6 +13,7 @@ use temporal_sdk_core::{
     WorkerConfig,
     protos::coresdk::{
         ActivityTaskCompletion,
+        ActivityHeartbeat,
         workflow_completion::WfActivationCompletion,
     },
 };
@@ -41,6 +42,7 @@ use pollers::{
 
 use protos::{
     WrappedActivityTaskCompletion,
+    WrappedActivityHeartbeat,
     activity_result::{
         WrappedActivityResult,
         WrappedStatus,
@@ -213,6 +215,10 @@ impl WrappedCore {
             }
         })
     }
+
+    fn record_activity_heartbeat(&self, details: WrappedActivityHeartbeat) {
+        self.internal.record_activity_heartbeat(ActivityHeartbeat::from(details))
+    }
 }
 
 #[pyfunction(name = "init")]
@@ -258,6 +264,7 @@ pub fn pytemporalio(py: Python<'_>, root_module: &PyModule) -> PyResult<()> {
     let protos_module = PyModule::new(py, "protos")?;
     root_module.add_submodule(protos_module)?;
     protos_module.add_class::<WrappedActivityTaskCompletion>()?;
+    protos_module.add_class::<WrappedActivityHeartbeat>()?;
 
     let protos_activity_result_module = PyModule::new(py, "activity_result")?;
     protos_module.add_submodule(protos_activity_result_module)?;

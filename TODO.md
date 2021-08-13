@@ -9,5 +9,6 @@
 * FIXME parse SDK's exceptions and convert them to specific Python exceptions
 * FIXME "internal" should expose fields too so that even parameters are readable
 * FIXME use a builder pattern or something like that to avoid the Nones in oneof enums
+* FIXME https://stackoverflow.com/questions/67412827/pyo3-deriving-frompyobject-for-enums
 * FIXME maybe there's a way to get rid of &Try(From) duplicates which accept a reference
 * FIXME try generating PyO3 classes from protobufs: https://github.com/elbaro/pyo3-prost/

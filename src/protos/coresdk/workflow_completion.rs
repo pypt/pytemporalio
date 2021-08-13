@@ -13,7 +13,7 @@ use temporal_sdk_core::protos::coresdk::{
     },
 };
 
-use crate::protos::{
+use crate::protos::coresdk::{
     common::WrappedUserCodeFailure,
     workflow_commands::{
         WrappedWorkflowCommand,
@@ -63,7 +63,7 @@ impl TryFrom<WrappedSuccess> for Success {
             commands.push(result?);
         }
         Ok(Success {
-            commands: commands,
+            commands,
         })
     }
 }

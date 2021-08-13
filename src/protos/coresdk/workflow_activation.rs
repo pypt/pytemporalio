@@ -17,7 +17,7 @@ use temporal_sdk_core::protos::coresdk::{
     activity_result::ActivityResult,
 };
 
-use crate::protos::{
+use crate::protos::coresdk::{
     common::WrappedPayload,
     activity_result::WrappedActivityResult,
 };

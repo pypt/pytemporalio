@@ -11,7 +11,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3_chrono;
 use temporal_sdk_core::protos::coresdk::common::Payload;
 
-use crate::protos::common::WrappedPayload;
+use crate::protos::coresdk::common::WrappedPayload;
 
 pub(crate) fn pyo3_chrono_duration_to_std_duration(duration: pyo3_chrono::Duration) -> Result<StdDuration, crate::PyErr> {
     // FIXME where does ".0" point to?

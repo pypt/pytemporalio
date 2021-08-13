@@ -27,7 +27,7 @@ use temporal_sdk_core::protos::coresdk::{
 };
 
 
-use crate::protos::common::{
+use crate::protos::coresdk::common::{
     WrappedPayload,
     WrappedRetryPolicy,
     WrappedUserCodeFailure,

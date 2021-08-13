@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::convert::TryFrom;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;

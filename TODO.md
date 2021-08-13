@@ -10,3 +10,4 @@
 * FIXME "internal" should expose fields too so that even parameters are readable
 * FIXME use a builder pattern or something like that to avoid the Nones in oneof enums
 * FIXME maybe there's a way to get rid of &Try(From) duplicates which accept a reference
+* FIXME try generating PyO3 classes from protobufs: https://github.com/elbaro/pyo3-prost/

@@ -249,6 +249,10 @@ fn wrapped_init(py: Python, opts: WrappedCoreInitOptions) -> PyResult<&PyAny> {
 
 #[pymodule]
 pub fn pytemporalio(py: Python<'_>, root_module: &PyModule) -> PyResult<()> {
+    root_module.add_function(wrap_pyfunction!(wrapped_init, root_module)?)?;
+    root_module.add_class::<WrappedCore>()?;
+    root_module.add_class::<WrappedCoreInitOptions>()?;
+
     let errors_module = PyModule::new(py, "errors")?;
     root_module.add_submodule(errors_module)?;
     errors_module.add("WorkerRegistrationError", py.get_type::<WorkerRegistrationError>())?;
@@ -256,9 +260,6 @@ pub fn pytemporalio(py: Python<'_>, root_module: &PyModule) -> PyResult<()> {
 
     let pollers_module = PyModule::new(py, "pollers")?;
     root_module.add_submodule(pollers_module)?;
-    root_module.add_function(wrap_pyfunction!(wrapped_init, root_module)?)?;
-    root_module.add_class::<WrappedCore>()?;
-    root_module.add_class::<WrappedCoreInitOptions>()?;
 
     // FIXME iterate over Vec of traits here and elsewhere somehow
     let pollers_gateway_module = PyModule::new(py, "gateway")?;

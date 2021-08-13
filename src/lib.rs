@@ -124,6 +124,7 @@ impl WrappedCoreInitOptions {
 
 
 #[pyclass(name = "Core")]
+#[derive(Clone)]
 struct WrappedCore {
     // FIXME rename to something more sensible
     pub(crate) internal: Arc<dyn Core>,
